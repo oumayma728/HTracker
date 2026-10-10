@@ -20,6 +20,9 @@ export type Habit = {
   goal: string;
   reminder: string;
   color: string;
+  frequency: string;
+  /** Raw reminder time "HH:MM", or "" when off. */
+  remindTime: string;
   /** Consecutive completed days ending yesterday. */
   streakBeforeToday: number;
 };
@@ -75,6 +78,7 @@ type HabitRow = {
   id: number;
   name: string;
   goal: string | null;
+  period: string;
   remindTime: string | null;
   color: string;
   logs: { date: Date }[];
@@ -88,6 +92,8 @@ function toHabit(row: HabitRow, today: Date): Habit {
     goal: row.goal || "none",
     reminder: formatReminder(row.remindTime),
     color: row.color,
+    frequency: row.period,
+    remindTime: row.remindTime ?? "",
     streakBeforeToday: streakEndingYesterday(doneDays, today),
   };
 }
@@ -112,6 +118,7 @@ export async function getHabits(): Promise<Habit[]> {
       goal: true,
       remindTime: true,
       color: true,
+      period: true,
       logs: { select: { date: true } },
     },
   });
@@ -133,6 +140,7 @@ export async function getHabit(id: string): Promise<Habit | undefined> {
       goal: true,
       remindTime: true,
       color: true,
+      period: true,
       logs: { select: { date: true } },
     },
   });

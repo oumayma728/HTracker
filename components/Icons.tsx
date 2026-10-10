@@ -104,3 +104,20 @@ export const IconCalendar = (p: IconProps) => (
     <path d="M3 10h18M8 3v4M16 3v4" />
   </Svg>
 );
+
+// Journey: padlock shown on locked roadmap steps
+export const IconLock = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="5" y="11" width="14" height="10" rx="2" /> {/* lock body */}
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" /> {/* shackle */}
+  </Svg>
+);
+
+// Journey: winding path with start/end points, used in the navigation
+export const IconRoute = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="6" cy="19" r="2" /> {/* start point */}
+    <circle cx="18" cy="5" r="2" /> {/* end point */}
+    <path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16" /> {/* winding road between them */}
+  </Svg>
+);

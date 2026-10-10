@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconCalendar, IconCheck, IconChart, IconList, IconSliders, IconSun } from "./Icons";
+import { IconCalendar, IconCheck, IconChart, IconList, IconRoute, IconSliders, IconSun } from "./Icons";
 import type { User } from "@/lib/data";
 import {SignOutButton} from "./SignOutButton";
 import { ThemeToggle } from "./settings/ThemeToggle";
@@ -10,6 +10,7 @@ import { ThemeToggle } from "./settings/ThemeToggle";
 const LINKS = [
   { href: "/home", label: "Today", Icon: IconSun },
   { href: "/habits", label: "Habits", Icon: IconList },
+  { href: "/journey", label: "Journey", Icon: IconRoute }, // Journey feature: step-by-step roadmap
   { href: "/Calendar", label: "Calendar", Icon: IconCalendar },
   { href: "/Statistics", label: "Stats", Icon: IconChart },
   { href: "/Profile", label: "Settings", Icon: IconSliders },

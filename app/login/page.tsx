@@ -9,6 +9,7 @@ type Mode = "signin" | "signup";
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [error , setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const isSignup = mode === "signup";
@@ -25,16 +26,25 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");  
-    
+    const {error}= await (isSignup ? signUp.email({name: String(formData.get("name") ?? ""), email, password}) : signIn.email({ email, password }));
     const res = isSignup
     ? await signUp.email({name: String(formData.get("name") ?? ""), email, password})
     : await signIn.email({ email, password });
-
-    setLoading(false);
     if (res.error) {
-      setError(res.error.message || "An error occurred. Please try again.");
-      return;
-    }
+  const message = res.error.message?.toLowerCase() ?? "";
+
+  if (isSignup && (message.includes("already") || message.includes("exist"))) {
+    setError("An account with this email already exists. Please log in.");
+  } else if (!isSignup) {
+    setError("Unable to log in. Please check your email and password.");
+  } else {
+    setError(res.error.message || "Unable to create your account. Please try again.");
+  }
+
+  return;
+}
+
+    setErrorMessage(null);
     router.push("/home");
     router.refresh();
   }
@@ -125,11 +135,12 @@ export default function LoginPage() {
               required
             />
           </div>
+          {error && <p className="error-message">
+            {error}</p>}
 
           <button type="submit" className="btn btn-primary btn-lg btn-block">
             {isSignup ? "Create account" : "Sign in"}
           </button>
-          <div className="divider">or</div>
         </form>
       </section>
     </div>

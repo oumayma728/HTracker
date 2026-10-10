@@ -1770,3 +1770,332 @@ button.user-out {
     display: none;
   }
 }
+
+/* ========================================================================
+   Journey feature (app/journey + components/journey)
+   Uses only the existing design tokens above, so light/dark themes just work.
+   Written mobile-first: base rules target phones, the @media block widens them.
+   ======================================================================== */
+
+/* Visually hidden text that screen readers still announce */
+.sr-only {
+  position: absolute; /* take it out of the layout */
+  width: 1px; /* 1x1 box */
+  height: 1px; /* 1x1 box */
+  padding: 0; /* no padding */
+  margin: -1px; /* pull it out of flow */
+  overflow: hidden; /* hide the text */
+  clip: rect(0, 0, 0, 0); /* clip to nothing */
+  white-space: nowrap; /* keep it on one line */
+  border: 0; /* no border */
+}
+
+/* Page wrapper: keeps the roadmap a readable width on big screens */
+.journey {
+  width: 100%; /* full width on phones */
+  max-width: 760px; /* readable column on desktop */
+  display: flex; /* stack sections */
+  flex-direction: column; /* top to bottom */
+  gap: 20px; /* space between header, toggle and view */
+}
+
+/* Progress line under the title: "3 of 12 steps done" + bar */
+.journey-progress {
+  display: flex; /* stack text and bar */
+  flex-direction: column; /* text above bar */
+  gap: 8px; /* space between them */
+}
+
+/* ---------- two-button view switch (Path / Checklist) ---------- */
+.seg {
+  display: inline-flex; /* buttons side by side */
+  padding: 4px; /* inner gap around the buttons */
+  gap: 4px; /* gap between the buttons */
+  border: 1px solid var(--border); /* same border as cards */
+  border-radius: 12px; /* rounded like inputs */
+  background: var(--surface); /* card background */
+  align-self: flex-start; /* don't stretch to full width */
+}
+
+.seg-btn {
+  min-height: 40px; /* comfortable tap target */
+  padding: 0 16px; /* horizontal room */
+  border: 0; /* no border */
+  border-radius: 9px; /* slightly smaller than the container radius */
+  background: transparent; /* inactive look */
+  font-size: 14px; /* label size */
+  font-weight: 600; /* label weight */
+  white-space: nowrap; /* keep "Paste text" / "Upload PDF" on one line */
+  color: var(--muted); /* inactive colour */
+  transition: background-color 0.15s ease, color 0.15s ease; /* smooth switch */
+}
+
+.seg-btn[aria-pressed="true"] {
+  background: var(--green-tint); /* active: same tint as .choice */
+  color: var(--green-ink); /* active text colour */
+}
+
+/* ---------- PathView ---------- */
+.path {
+  position: relative; /* anchor for the dashed line */
+  --amp: 56px; /* how far nodes swing left/right on phones */
+  --node: 64px; /* node diameter */
+  padding: 8px 0 24px; /* room above the first and below the last node */
+}
+
+/* The ONE dashed line behind all nodes (not drawn per segment) */
+.path-line {
+  position: absolute; /* placed behind the list */
+  left: 50%; /* centre of the path */
+  top: calc(8px + var(--node) / 2); /* starts at the centre of the first node */
+  bottom: 96px; /* ends behind the last node, above its label */
+  width: 0; /* only the border is visible */
+  border-left: 3px dashed var(--line); /* the dashes */
+  transform: translateX(-1.5px); /* centre the 3px border on the line */
+}
+
+.path-list {
+  list-style: none; /* no numbers: nodes show them */
+  margin: 0; /* reset */
+  padding: 0; /* reset */
+  display: flex; /* stack the stops */
+  flex-direction: column; /* top to bottom */
+  gap: 18px; /* vertical spacing between stops */
+  position: relative; /* sits above the line */
+}
+
+.path-item {
+  display: flex; /* node + label */
+  flex-direction: column; /* node above its label */
+  align-items: center; /* centred on the line */
+  gap: 8px; /* space between node and label */
+  align-self: center; /* shrink to content so the shift can't cause sideways scrolling */
+  transform: translateX(calc(var(--wave, 0) * var(--amp))); /* the left/right wave (--wave set per node, -1..1) */
+}
+
+.path-node {
+  width: var(--node); /* circle size */
+  height: var(--node); /* circle size */
+  border-radius: 50%; /* circle */
+  display: grid; /* centre the content */
+  place-items: center; /* centre the icon/number */
+  border: 0; /* no default button border */
+  flex-shrink: 0; /* keep it round */
+  box-shadow: var(--shadow-sm); /* subtle depth */
+}
+
+.path-item.is-done .path-node {
+  background: var(--green); /* filled dark green */
+  color: #ffffff; /* white check */
+}
+
+.path-item.is-current .path-node {
+  background: #ffffff; /* white */
+  color: var(--coral-ink); /* number colour */
+  box-shadow: 0 0 0 5px var(--coral), 0 0 0 11px var(--coral-tint), var(--shadow-md); /* coral ring + soft halo */
+  cursor: pointer; /* the only clickable node */
+  transition: transform 0.1s ease; /* smooth press */
+}
+
+.path-item.is-current .path-node:hover {
+  transform: scale(1.05); /* small lift on hover */
+}
+
+.path-item.is-current .path-node:active {
+  transform: scale(0.95); /* press feedback */
+}
+
+.path-item.is-current .path-node:disabled {
+  cursor: progress; /* saving */
+  opacity: 0.7; /* looks busy */
+}
+
+.path-item.is-locked .path-node {
+  background: var(--border); /* grey */
+  color: var(--line); /* grey lock */
+  box-shadow: none; /* flat: not interactive */
+}
+
+.path-num {
+  font-family: var(--font-display), Georgia, serif; /* Fraunces like the titles */
+  font-weight: 600; /* same weight as titles */
+  font-size: 24px; /* big number */
+}
+
+.path-label {
+  display: flex; /* stack title + description */
+  flex-direction: column; /* top to bottom */
+  align-items: center; /* centred under the node */
+  text-align: center; /* centred text */
+  max-width: 220px; /* keep labels narrow so the wave stays visible */
+  padding: 4px 10px; /* small pill around the text */
+  border-radius: 10px; /* rounded pill */
+  background: var(--bg); /* hides the dashed line behind the text */
+}
+
+.path-title {
+  font-size: 15px; /* readable on phones */
+  font-weight: 600; /* emphasis */
+  line-height: 1.3; /* tight wrap */
+}
+
+.path-item.is-locked .path-title {
+  color: var(--muted); /* locked titles are quieter */
+}
+
+.path-item.is-current .path-title {
+  color: var(--coral-ink); /* current title picks up the coral */
+}
+
+.path-desc {
+  margin-top: 4px; /* gap below the title */
+  font-size: 13px; /* secondary text */
+  color: var(--ink-2); /* softer ink */
+}
+
+/* ---------- ChecklistView ---------- */
+.checklist {
+  list-style: none; /* order is shown in each row */
+  margin: 0; /* reset */
+  padding: 0; /* reset */
+}
+
+.checklist-row + .checklist-row {
+  border-top: 1px solid var(--border-soft); /* divider between rows */
+}
+
+.checklist-btn {
+  width: 100%; /* full-row hit area */
+  display: flex; /* circle | text | cta */
+  align-items: center; /* vertically centred */
+  gap: 14px; /* space between parts */
+  padding: 14px 16px; /* row padding on phones */
+  border: 0; /* no default button border */
+  background: transparent; /* row colour comes from the li */
+  text-align: left; /* buttons centre text by default */
+}
+
+.checklist-row.is-current {
+  background: var(--coral-tint); /* current row tinted */
+}
+
+.checklist-row.is-current .checklist-btn {
+  cursor: pointer; /* the only clickable row */
+}
+
+.checklist-row.is-current .checklist-btn:disabled {
+  cursor: progress; /* saving */
+}
+
+.checklist-row.is-locked {
+  opacity: 0.55; /* locked rows dimmed */
+}
+
+.check-circle {
+  width: 36px; /* 36px status circle */
+  height: 36px; /* 36px status circle */
+  flex-shrink: 0; /* never squashed by long titles */
+  border-radius: 50%; /* circle */
+  display: grid; /* centre the icon */
+  place-items: center; /* centre the icon */
+}
+
+.is-done .check-circle {
+  background: var(--green); /* green */
+  color: #ffffff; /* white check */
+}
+
+.is-current .check-circle {
+  background: #ffffff; /* white */
+  border: 3px solid var(--coral); /* coral outline */
+}
+
+.is-locked .check-circle {
+  background: var(--border); /* grey */
+  color: var(--line); /* grey lock */
+}
+
+.checklist-text {
+  flex: 1; /* takes the remaining width */
+  min-width: 0; /* allows wrapping */
+  display: flex; /* stack order, title, description */
+  flex-direction: column; /* top to bottom */
+  gap: 2px; /* tight spacing */
+}
+
+.checklist-order {
+  font-size: 12px; /* small label */
+  font-weight: 600; /* overline weight */
+  letter-spacing: 0.06em; /* overline spacing */
+  text-transform: uppercase; /* small overline like .overline */
+  color: var(--muted); /* quiet */
+}
+
+.checklist-title {
+  font-size: 15px; /* main row text */
+  font-weight: 600; /* emphasis */
+}
+
+.is-done .checklist-title {
+  color: var(--muted); /* finished titles step back */
+}
+
+.checklist-desc {
+  font-size: 13px; /* secondary text */
+  color: var(--ink-2); /* softer ink */
+}
+
+.checklist-cta {
+  flex-shrink: 0; /* never wraps away */
+  font-size: 13px; /* small action label */
+  font-weight: 600; /* emphasis */
+  color: var(--coral-ink); /* hint that the row is the action */
+}
+
+/* ---------- creation form ---------- */
+.journey-form {
+  display: flex; /* stack fields */
+  flex-direction: column; /* top to bottom */
+  gap: 16px; /* space between fields */
+}
+
+.textarea {
+  min-height: 160px; /* room for pasted text */
+  height: auto; /* override the 48px .input height */
+  padding: 12px 14px; /* text inset */
+  resize: vertical; /* user can make it taller */
+  line-height: 1.5; /* readable paragraphs */
+  font: inherit; /* same font as the page */
+}
+
+.form-error {
+  padding: 10px 14px; /* message box padding */
+  border-radius: 10px; /* rounded */
+  background: var(--coral-tint); /* same palette as danger UI */
+  color: var(--coral-ink); /* readable on the tint */
+  font-size: 14px; /* message size */
+}
+
+.form-notice {
+  padding: 10px 14px; /* message box padding */
+  border-radius: 10px; /* rounded */
+  background: var(--green-tint); /* calm info colour */
+  color: var(--green-ink); /* readable on the tint */
+  font-size: 14px; /* message size */
+}
+
+/* ---------- wider screens ---------- */
+@media (min-width: 641px) {
+  .path {
+    --amp: 110px; /* bigger wave when there's room */
+    --node: 72px; /* bigger nodes */
+  }
+
+  .path-list {
+    gap: 24px; /* more breathing room */
+  }
+
+  .checklist-btn {
+    padding: 16px 22px; /* roomier rows */
+  }
+}

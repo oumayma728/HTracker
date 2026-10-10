@@ -9,8 +9,9 @@ const display = Fraunces({ subsets: ["latin"], variable: "--font-display", displ
 const body = DM_Sans({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Tally",
+  title: "habit tracker",
   description: "A simple daily habit tracker.",
+  applicationName: "habit tracker",
 };
 
 function getInitials(name: string) {
