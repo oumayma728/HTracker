@@ -26,7 +26,6 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");  
-    const {error}= await (isSignup ? signUp.email({name: String(formData.get("name") ?? ""), email, password}) : signIn.email({ email, password }));
     const res = isSignup
     ? await signUp.email({name: String(formData.get("name") ?? ""), email, password})
     : await signIn.email({ email, password });

@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/data";
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
+import { NotificationSettings } from "@/components/settings/NotificationSettings";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -16,6 +17,7 @@ export default async function SettingsPage() {
       </header>
 
       <SettingsForm user={user} />
+      <NotificationSettings />
 
     </>
   );

@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -25,10 +24,12 @@ model User {
   reminderChannel String  @default("email")
   weekStart       String  @default("mon")
   theme           String  @default("light")
+  timeZone        String  @default("UTC") // IANA zone (e.g. "Africa/Tunis"), saved from the browser when notifications are turned on
 
   // your app's data
-  habits Habit[]
-  roadmaps Roadmap[] // Journey feature: every roadmap this user has generated (the page shows only the newest)
+  habits            Habit[]
+  pushSubscriptions PushSubscription[] // one per device that turned notifications on
+  roadmaps          Roadmap[] // Journey feature: every roadmap this user has generated (the page shows only the newest)
 
   @@unique([email])
   @@map("user")
@@ -46,8 +47,8 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@map("session")
   @@index([userId])
+  @@map("session")
 }
 
 model Account {
@@ -66,8 +67,8 @@ model Account {
   createdAt             DateTime
   updatedAt             DateTime
 
-  @@map("account")
   @@index([userId])
+  @@map("account")
 }
 
 model Verification {
@@ -78,22 +79,23 @@ model Verification {
   createdAt  DateTime?
   updatedAt  DateTime?
 
-  @@map("verification")
   @@index([identifier])
+  @@map("verification")
 }
 
 model Habit {
-  id         Int        @id @default(autoincrement())
-  name       String
-  goal       String?
-  period     String     @default("daily")
-  color      String
-  remindTime String?
-  archived   Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-  userId     String
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  logs       HabitLog[]
+  id             Int        @id @default(autoincrement())
+  name           String
+  goal           String?
+  period         String     @default("daily")
+  color          String
+  remindTime     String?
+  archived       Boolean    @default(false)
+  lastRemindedOn DateTime?  @db.Date // user's local date of the last reminder sent, so each habit is reminded at most once a day
+  createdAt      DateTime   @default(now())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs           HabitLog[]
 
   @@index([userId])
 }
@@ -106,8 +108,6 @@ model HabitLog {
 
   @@unique([habitId, date])
 }
-
-
 
 // ---------- Journey feature ----------
 
@@ -136,4 +136,19 @@ model RoadmapStep {
   completedAt DateTime? // when it was finished (null while not done)
 
   @@unique([roadmapId, order]) // two steps can't share a position in the same roadmap
+}
+
+// ---------- Push notifications ----------
+
+// A browser/device that agreed to receive push notifications for this user.
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique // the push service URL for this device (unique per device + browser)
+  p256dh    String // public encryption key from the browser
+  auth      String // auth secret from the browser
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

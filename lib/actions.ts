@@ -133,22 +133,25 @@ export async function createHabit(formData: FormData): Promise<void> {
 export async function saveSettings(formData: FormData): Promise<void> {
   const user = await requireUser();
 
-  const name = String(formData.get("name") ?? "").trim();
-  const theme = String(formData.get("theme") ?? "light");
-  const weekStart = String(formData.get("weekStart") ?? "mon");
-  const channel = String(formData.get("channel") ?? "email");
-  const reminderTime = String(formData.get("reminderTime") ?? "");
+  // Only change settings the form actually sent, so saving one field never resets the others.
+  const field = (key: string) => (formData.has(key) ? String(formData.get(key) ?? "") : null);
+  const name = field("name")?.trim();
+  const theme = field("theme");
+  const weekStart = field("weekStart");
+  const channel = field("channel");
+  const reminderTime = field("reminderTime");
+  const reminders = field("reminders");
   // Email changes need Better Auth's own method, so the email field is not saved here.
 
   await prisma.user.update({
     where: { id: user.id },
     data: {
       ...(name ? { name: name.slice(0, 80) } : {}),
-      theme: ["light", "dark", "system"].includes(theme) ? theme : "light",
-      weekStart: ["mon", "sun"].includes(weekStart) ? weekStart : "mon",
-      reminderChannel: ["email", "push"].includes(channel) ? channel : "email",
-      reminderOn: formData.get("reminders") === "on",
-      ...(TIME.test(reminderTime) ? { reminderTime } : {}),
+      ...(theme && ["light", "dark", "system"].includes(theme) ? { theme } : {}),
+      ...(weekStart && ["mon", "sun"].includes(weekStart) ? { weekStart } : {}),
+      ...(channel && ["email", "push"].includes(channel) ? { reminderChannel: channel } : {}),
+      ...(reminders !== null ? { reminderOn: reminders === "on" } : {}),
+      ...(reminderTime && TIME.test(reminderTime) ? { reminderTime } : {}),
     },
   });
 

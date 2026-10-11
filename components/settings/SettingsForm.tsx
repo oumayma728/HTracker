@@ -6,22 +6,13 @@ import { saveSettings } from "@/lib/actions";
 export function SettingsForm({ user }: { user: User }) {
     const [name, setName] = useState(user.name || "");
     const [email, setEmail] = useState(user.email || "");
-    const [remindersOn, setRemindersOn] = useState(true);
-    const [channel, setChannel] = useState("email");
-    const [theme, setTheme] = useState("light");
-    const [weekStart, setWeekStart] = useState("mon");
     function handleProfileSave(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         formData.set("name", name);
         formData.set("email", email);
-        formData.set("remindersOn", remindersOn.toString());
-        formData.set("channel", channel);
-        formData.set("theme", theme);
-        formData.set("weekStart", weekStart);
         saveSettings(formData);
     }
-    console.log("User:", user); // Log the user object to the console
 
     return (
         <>

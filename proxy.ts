@@ -12,6 +12,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on every page except the login page, the auth API, Next.js internals and PWA files
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/).*)"],
+  // Run on every page except the login page, the auth API, Next.js internals, PWA files,
+  // the service worker, and the reminders route (it checks its own CRON_SECRET)
+  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/|sw.js|api/reminders).*)"],
 };
