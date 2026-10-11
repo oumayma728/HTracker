@@ -68,8 +68,10 @@ export function NotificationSettings() {
       }
       setStatus("on");
       setMessage({ kind: "notice", text: "Notifications are on for this device." });
-    } catch {
-      setMessage({ kind: "error", text: "Couldn't turn notifications on. Please try again." });
+    } catch (error) {
+      console.error("[notifications] turn on failed:", error);
+      const reason = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      setMessage({ kind: "error", text: `Couldn't turn notifications on (${reason}).` });
     } finally {
       setBusy(false);
     }

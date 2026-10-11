@@ -15,12 +15,19 @@ function configure(): boolean {
   if (configured) return true;
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
+  let subject = process.env.VAPID_SUBJECT?.trim();
   if (!publicKey || !privateKey || !subject) {
     console.error("[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT must all be set");
     return false;
   }
-  webpush.setVapidDetails(subject, publicKey, privateKey);
+  // The subject must be "mailto:..." or "https://...". Accept a plain email address too.
+  if (/^[^\s@:]+@[^\s@]+$/.test(subject)) subject = `mailto:${subject}`;
+  try {
+    webpush.setVapidDetails(subject, publicKey, privateKey);
+  } catch (error) {
+    console.error("[push] invalid VAPID settings:", error instanceof Error ? error.message : error);
+    return false;
+  }
   configured = true;
   return true;
 }
