@@ -24,6 +24,7 @@ export async function savePushSubscription(sub: BrowserSubscription, timeZone: s
   }
 
   // One row per device. If this device was used by another account before, it now belongs to this one.
+  //upsert = update +insert
   await prisma.pushSubscription.upsert({
     where: { endpoint },
     create: { userId: user.id, endpoint, p256dh, auth },
