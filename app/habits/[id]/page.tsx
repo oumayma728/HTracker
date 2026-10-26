@@ -4,6 +4,7 @@ import { IconChevronLeft } from "@/components/Icons";
 import { HabitDetailActions } from "@/components/habits/HabitDetailActions";
 import { getHabit, getHabitLogs } from "@/lib/data";
 import { formatDayShort, fromISODate } from "@/lib/dates";
+import { weekdayOf } from "@/lib/schedule";
 
 const WEEKDAY_LABELS = ["Mon", "", "Wed", "", "Fri", "", ""];
 
@@ -15,21 +16,29 @@ export default async function HabitDetailPage({ params }: { params: Promise<{ id
   }
   const logs = await getHabitLogs(id,140);
   // TODO: load the habit and its check-in history for this id.
-const history = logs.map((l) => ({ done: l.done, label: formatDayShort(fromISODate(l.iso)) }));
-  const doneTotal = history.filter((d) => d.done).length;
-  const rate = Math.round((doneTotal / history.length) * 100);
+  // planned = the habit is scheduled that weekday. Unplanned days never count as "missed".
+  const history = logs.map((l) => {
+    const date = fromISODate(l.iso);
+    return { done: l.done, planned: habit.days.includes(weekdayOf(date)), label: formatDayShort(date) };
+  });
+  const plannedDays = history.filter((d) => d.planned);
+  const doneTotal = plannedDays.filter((d) => d.done).length;
+  const rate = plannedDays.length ? Math.round((doneTotal / plannedDays.length) * 100) : 0;
 
+  // Streaks only look at planned days. Today not being done yet doesn't break the current streak.
   let current = 0;
-  for (let i = history.length - 1; i >= 0 && history[i].done; i--) current += 1;
+  let i = plannedDays.length - 1;
+  if (i >= 0 && !plannedDays[i].done && history[history.length - 1].planned) i -= 1;
+  for (; i >= 0 && plannedDays[i].done; i--) current += 1;
 
   let longest = 0;
   let run = 0;
-  for (const day of history) {
+  for (const day of plannedDays) {
     run = day.done ? run + 1 : 0;
     if (run > longest) longest = run;
   }
 
-  const recent = history.slice(-7).reverse();
+  const recent = history.filter((d) => d.planned || d.done).slice(-7).reverse();
 
   return (
     <>
@@ -45,7 +54,7 @@ const history = logs.map((l) => ({ done: l.done, label: formatDayShort(fromISODa
             <h1 className="page-title">{habit.name}</h1>
           </div>
           <p className="muted">
-            {habit.goal} · Every day · Reminder at {habit.reminder}
+            {habit.goal} · {habit.scheduleLabel} · Reminder at {habit.reminder}
           </p>
         </div>
         <HabitDetailActions habit={habit} />
@@ -57,13 +66,13 @@ const history = logs.map((l) => ({ done: l.done, label: formatDayShort(fromISODa
             <section className="card stat">
               <div className="muted small">Current streak</div>
               <div className="stat-value">
-                {current} <span className="stat-unit">days</span>
+                {current} <span className="stat-unit">{habit.days.length === 7 ? "days" : "in a row"}</span>
               </div>
             </section>
             <section className="card stat">
               <div className="muted small">Longest streak</div>
               <div className="stat-value">
-                {longest} <span className="stat-unit">days</span>
+                {longest} <span className="stat-unit">{habit.days.length === 7 ? "days" : "in a row"}</span>
               </div>
             </section>
             <section className="card stat">
@@ -89,10 +98,14 @@ const history = logs.map((l) => ({ done: l.done, label: formatDayShort(fromISODa
                 <div
                   className="heat-grid"
                   role="img"
-                  aria-label={`${habit.name} check-ins over the last 20 weeks: ${doneTotal} of ${history.length} days done.`}
+                  aria-label={`${habit.name} check-ins over the last 20 weeks: ${doneTotal} of ${plannedDays.length} planned days done.`}
                 >
                   {history.map((d, i) => (
-                    <div key={i} className={`heat-cell${d.done ? " is-done" : ""}`} title={`${d.label}: ${d.done ? "done" : "missed"}`} />
+                    <div
+                      key={i}
+                      className={`heat-cell${d.done ? " is-done" : d.planned ? "" : " is-off"}`}
+                      title={`${d.label}: ${d.done ? "done" : d.planned ? "missed" : "not planned"}`}
+                    />
                   ))}
                 </div>
               </div>

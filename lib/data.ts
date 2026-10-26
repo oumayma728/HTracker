@@ -13,6 +13,7 @@ import {
   startOfWeekMon,
   toISODate,
 } from "./dates";
+import { isScheduledOn, scheduleLabel, scheduledDays, weekdayOf } from "./schedule";
 
 export type Habit = {
   id: string;
@@ -21,6 +22,10 @@ export type Habit = {
   reminder: string;
   color: string;
   frequency: string;
+  /** Planned weekdays, 1 = Monday ... 7 = Sunday. */
+  days: number[];
+  /** "Every day", "Weekdays", "Mon, Thu"... */
+  scheduleLabel: string;
   /** Raw reminder time "HH:MM", or "" when off. */
   remindTime: string;
   /** Consecutive completed days ending yesterday. */
@@ -63,15 +68,28 @@ function getInitials(name: string): string {
   );
 }
 
-/** How many days in a row were done, counting back from yesterday. */
-function streakEndingYesterday(doneDays: Set<string>, today: Date): number {
+/**
+ * How many planned days in a row were done, counting back from yesterday.
+ * Days the habit isn't planned for are skipped: they neither count nor break the streak.
+ */
+function streakEndingYesterday(doneDays: Set<string>, today: Date, period: string): number {
   let count = 0;
   let d = addDays(startOfDay(today), -1);
-  while (doneDays.has(toISODate(d))) {
+  for (let guard = 0; guard < 3660; guard++, d = addDays(d, -1)) {
+    if (!isScheduledOn(period, weekdayOf(d))) continue;
+    if (!doneDays.has(toISODate(d))) break;
     count += 1;
-    d = addDays(d, -1);
   }
   return count;
+}
+
+/** How many planned days a habit has between two dates (inclusive). */
+function countScheduled(period: string, from: Date, to: Date): number {
+  let n = 0;
+  for (let d = startOfDay(from); d <= to; d = addDays(d, 1)) {
+    if (isScheduledOn(period, weekdayOf(d))) n += 1;
+  }
+  return n;
 }
 
 type HabitRow = {
@@ -93,8 +111,10 @@ function toHabit(row: HabitRow, today: Date): Habit {
     reminder: formatReminder(row.remindTime),
     color: row.color,
     frequency: row.period,
+    days: scheduledDays(row.period),
+    scheduleLabel: scheduleLabel(row.period),
     remindTime: row.remindTime ?? "",
-    streakBeforeToday: streakEndingYesterday(doneDays, today),
+    streakBeforeToday: streakEndingYesterday(doneDays, today, row.period),
   };
 }
 
@@ -276,6 +296,7 @@ export async function getWeeklyCompletion(today: Date = new Date()): Promise<Wee
     where: { userId: user.id, archived: false },
     select: {
       createdAt: true,
+      period: true,
       logs: { where: { date: { gte: dayToDb(toISODate(firstMonday)) } }, select: { date: true } },
     },
   });
@@ -292,7 +313,7 @@ export async function getWeeklyCompletion(today: Date = new Date()): Promise<Wee
     for (const h of habits) {
       const createdIso = toISODate(h.createdAt);
       const from = createdIso > weekStartIso ? createdIso : weekStartIso;
-      if (from <= lastIso) possible += daysBetween(fromISODate(from), lastDay) + 1;
+      if (from <= lastIso) possible += countScheduled(h.period, fromISODate(from), lastDay); // only planned days count
       done += h.logs.filter((l) => {
         const d = dbToDay(l.date);
         return d >= weekStartIso && d <= lastIso;
@@ -321,6 +342,7 @@ export async function getHabitRates(): Promise<HabitRate[]> {
       name: true,
       color: true,
       createdAt: true,
+      period: true,
       logs: { where: { date: { gte: dayToDb(windowStartIso) } }, select: { date: true } },
     },
   });
@@ -329,7 +351,7 @@ export async function getHabitRates(): Promise<HabitRate[]> {
     .map((h) => {
       const createdIso = toISODate(h.createdAt);
       const from = createdIso > windowStartIso ? createdIso : windowStartIso;
-      const possible = daysBetween(fromISODate(from), todayDay) + 1;
+      const possible = countScheduled(h.period, fromISODate(from), todayDay); // only planned days count
       const pct = possible > 0 ? Math.min(100, Math.round((h.logs.length / possible) * 100)) : 0;
       return { id: String(h.id), name: h.name, color: h.color, pct };
     })
