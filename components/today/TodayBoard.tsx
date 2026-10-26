@@ -7,6 +7,8 @@ import { StreakChip } from "../StreakChip";
 import { pluralDays } from "@/lib/format";
 import { toggleHabit } from "@/lib/actions";
 import type { Habit, WeekDay } from "@/lib/data";
+import { fromISODate } from "@/lib/dates";
+import { weekdayOf } from "@/lib/schedule";
 
 type Props = {
   habits: Habit[];
@@ -19,12 +21,15 @@ export function TodayBoard({ habits, initialDone, week, todayIso }: Props) {
   const [done, setDone] = useState(initialDone);
   const [, startTransition] = useTransition();
 
-  const total = habits.length;
-  const rows = habits.map((h) => ({
+  // Only habits planned for today are listed (e.g. a Mon/Thu gym habit is hidden on Tuesday).
+  const todayWeekday = weekdayOf(fromISODate(todayIso));
+  const plannedOn = (weekday: number) => habits.filter((h) => h.days.includes(weekday)).length;
+  const rows = habits.filter((h) => h.days.includes(todayWeekday)).map((h) => ({
     ...h,
     isDone: Boolean(done[h.id]),
     streak: h.streakBeforeToday + (done[h.id] ? 1 : 0),
   }));
+  const total = rows.length;
   const doneCount = rows.filter((r) => r.isDone).length;
   const best = rows.reduce<(typeof rows)[number] | null>((a, b) => (!a || b.streak > a.streak ? b : a), null);
 
@@ -42,7 +47,8 @@ export function TodayBoard({ habits, initialDone, week, todayIso }: Props) {
 
   const remaining = total - doneCount;
   let message = `${remaining} habits to go.`;
-  if (total > 0 && remaining === 0) message = "All done for today. Nice work.";
+  if (total === 0) message = "Nothing planned today. Enjoy the rest day.";
+  else if (remaining === 0) message = "All done for today. Nice work.";
   else if (doneCount === 0) message = "Nothing checked off yet.";
   else if (remaining === 1) message = "One habit to go.";
 
@@ -54,8 +60,9 @@ export function TodayBoard({ habits, initialDone, week, todayIso }: Props) {
   return (
     <>
       <div className="week">
-        {week.map((d) => {
-          const status = d.kind === "today" ? `${doneCount}/${total}` : d.kind === "past" ? `${d.done}/${total}` : "–";
+        {week.map((d, i) => {
+          const planned = plannedOn(i + 1); // week starts on Monday, so index 0 = weekday 1
+          const status = d.kind === "today" ? `${doneCount}/${total}` : d.kind === "past" ? `${Math.min(d.done, planned)}/${planned}` : "–";
           return (
             <div key={d.label} className={`week-day is-${d.kind}`} aria-current={d.kind === "today" ? "date" : undefined}>
               <span className="week-label">{d.label}</span>
@@ -74,6 +81,7 @@ export function TodayBoard({ habits, initialDone, week, todayIso }: Props) {
               {doneCount} of {total} done
             </span>
           </div>
+          {rows.length === 0 && <p className="muted" style={{ padding: 24 }}>No habits planned for today.</p>}
           {rows.map((h) => (
             <div key={h.id} className="habit-row" style={{ "--habit": h.color } as CSSProperties}>
               <button

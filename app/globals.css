@@ -2099,3 +2099,56 @@ button.user-out {
     padding: 16px 22px; /* roomier rows */
   }
 }
+
+/* ---------- Habit schedule: day picker + "not planned" history cells ---------- */
+.day-picker {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr)); /* 7 equal buttons, fits a phone */
+  gap: 6px;
+}
+
+.day-btn {
+  min-height: 44px; /* comfortable tap target */
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.day-btn[aria-pressed="true"] {
+  background: var(--green);
+  border-color: var(--green);
+  color: #ffffff;
+}
+
+.day-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.day-preset {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.day-preset[aria-pressed="true"] {
+  background: var(--green-tint);
+  border-color: var(--green);
+  color: var(--green-ink);
+}
+
+/* Days the habit isn't planned for: faint outline, clearly not a "miss" */
+.heat-cell.is-off {
+  background: transparent;
+  border: 1px dashed var(--border);
+}

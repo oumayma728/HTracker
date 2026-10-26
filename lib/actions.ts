@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { periodFromDays } from "@/lib/schedule";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -19,7 +20,10 @@ const COLORS: Record<string, string> = {
   plum: "#8A4F7D",
   green: "#2E6F55",
 };
-const FREQUENCIES = ["daily", "weekdays", "three"];
+/** Planned days from the form's day picker (checkbox values 1-7), stored as Habit.period text. */
+function periodFromForm(formData: FormData): string {
+  return periodFromDays(formData.getAll("days").map(Number));
+}
 
 /** Make every page re-read the database on its next visit. */
 function refreshPages() {
@@ -70,7 +74,6 @@ export async function editHabit(habitId: string, formData: FormData): Promise<vo
   }
 
   const goal = String(formData.get("goal") ?? "").trim().slice(0, 60);
-  const frequency = String(formData.get("frequency") ?? "daily");
   const colorKey = String(formData.get("color") ?? "green");
   const reminder = String(formData.get("reminder") ?? "");
 
@@ -79,7 +82,7 @@ export async function editHabit(habitId: string, formData: FormData): Promise<vo
     data: {
       name,
       goal: goal || null,
-      period: FREQUENCIES.includes(frequency) ? frequency : "daily",
+      period: periodFromForm(formData),
       color: COLORS[colorKey] ?? COLORS.green,
       remindTime: TIME.test(reminder) ? reminder : null,
     },
@@ -112,7 +115,6 @@ export async function createHabit(formData: FormData): Promise<void> {
   }
 
   const goal = String(formData.get("goal") ?? "").trim().slice(0, 60);
-  const frequency = String(formData.get("frequency") ?? "daily");
   const colorKey = String(formData.get("color") ?? "green");
   const reminder = String(formData.get("reminder") ?? "");
 
@@ -121,7 +123,7 @@ export async function createHabit(formData: FormData): Promise<void> {
       userId: user.id,
       name,
       goal: goal || null,
-      period: FREQUENCIES.includes(frequency) ? frequency : "daily",
+      period: periodFromForm(formData),
       color: COLORS[colorKey] ?? COLORS.green,
       remindTime: TIME.test(reminder) ? reminder : null,
     },

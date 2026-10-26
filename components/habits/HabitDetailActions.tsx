@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteHabit , editHabit } from "@/lib/actions";
 import type { Habit } from "@/lib/data";
+import { DayPicker } from "./DayPicker";
 const COLOR_OPTIONS = [
   { id: "blue", name: "Blue", hex: "#3F6FA6" },
   { id: "ochre", name: "Ochre", hex: "#9C6F17" },
@@ -71,16 +72,7 @@ export function HabitDetailActions({ habit }: { habit: Habit }) {
           </label>
           <input type="text" id="edit-habit-goal" className="input" name="goal" defaultValue={habit.goal} />
         </div>
-        <div className="field">
-          <label className="label" htmlFor="edit-habit-frequency">
-            Frequency
-          </label>
-          <select id="edit-habit-frequency" className="input" name="frequency" defaultValue={habit.frequency}>
-            <option value="daily">Daily</option>
-            <option value="weekdays">Weekdays</option>
-            <option value="three">3 times a week</option>
-          </select>
-        </div>
+        <DayPicker initial={habit.days} />
         <div className="field">
           <div className="label">Color</div>
           <div className="swatch-row">

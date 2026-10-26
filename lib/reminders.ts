@@ -2,6 +2,7 @@
  * Reminder timing: pure functions (no database, no network) so they're easy to test.
  * Everything is worked out in the user's own time zone.
  */
+import { isScheduledOn } from "./schedule";
 
 /** How long after its time a reminder may still go out (covers a late or skipped scheduler run). */
 export const LOOKBACK_MINUTES = 60;
@@ -53,7 +54,7 @@ export function timeToMinutes(time: string | null): number | null {
 
 export type ReminderHabit = {
   name: string;
-  period: string; // "daily" | "weekdays" | "three"
+  period: string; // "daily" | "weekdays" | "days:1,4" (see lib/schedule.ts)
   remindTime: string | null; // "HH:MM" or null when off
   lastRemindedOn: string | null; // local date of the last reminder, "YYYY-MM-DD"
   doneToday: boolean; // already checked off today (user's local date)
@@ -63,13 +64,13 @@ export type ReminderHabit = {
  * Should this habit's reminder go out right now?
  * - it has a reminder time, and that time has passed within the last LOOKBACK_MINUTES
  * - it wasn't already reminded today, and isn't already done today
- * - "weekdays" habits are skipped on Saturday and Sunday
+ * - only on the habit's planned days (Habit.period, see lib/schedule.ts)
  */
 export function isReminderDue(habit: ReminderHabit, now: LocalNow): boolean {
   const at = timeToMinutes(habit.remindTime);
   if (at === null) return false;
   if (habit.doneToday || habit.lastRemindedOn === now.date) return false;
-  if (habit.period === "weekdays" && now.weekday >= 6) return false;
+  if (!isScheduledOn(habit.period, now.weekday)) return false; // e.g. a Mon/Thu habit is quiet on other days
   const late = now.minutes - at;
   return late >= 0 && late < LOOKBACK_MINUTES;
 }

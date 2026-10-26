@@ -5,6 +5,7 @@ import { createHabit } from "@/lib/actions";
 import { IconChevronRight, IconClose, IconFlame } from "@/components/Icons";
 import { daysLabel } from "@/lib/format";
 import type { Habit } from "@/lib/data";
+import { DayPicker } from "@/components/habits/DayPicker";
 
 const COLOR_OPTIONS = [
   { id: "blue", name: "Blue", hex: "#3F6FA6" },
@@ -53,7 +54,7 @@ const [colorId , setColorId] = useState("green");
                                 <span className="list-link-text">
                                     <span className="habit-name">{h.name}</span>
                                     <span className="habit-sub">
-                                        Goal: {h.goal} · Reminder {h.reminder}
+                                        {h.scheduleLabel} · Goal: {h.goal} · Reminder {h.reminder}
                                     </span>
                                 </span>
                             </Link>
@@ -91,6 +92,8 @@ const [colorId , setColorId] = useState("green");
                             </label>
                             <input id="habit-goal" name="goal" type="text" className="input" placeholder="e.g., 8 glasses" />
                         </div>
+
+                        <DayPicker />
 
                         <div className="field">
                             <label className="label" htmlFor="habit-reminder">
